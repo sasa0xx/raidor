@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { supabase } from "../lib/supabase";
 
 export function SignUp() {
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const [step, setStep] = useState<'signup' | 'verify'>('signup');
+
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [otp, setOtp] = useState('');
+
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +39,24 @@ export function SignUp() {
       }
 
       console.log('Sign up successful:', data);
+      setStep('verify');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const { error: verifyError } = await supabase.auth.verifyOtp({ phone, token: otp, type: 'sms' });
+      if (verifyError) {
+        setError(verifyError.message);
+        return;
+      }
+      navigate('/');
     } finally {
       setIsLoading(false);
     }
@@ -44,8 +67,12 @@ export function SignUp() {
       <div className="w-full max-w-md p-6 rounded-xl border border-gray-800 bg-gray-900 shadow-xl space-y-4">
 
         <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-bold text-gray-100">Create an account</h1>
-          <p className="text-sm font-medium text-gray-400">Create a new Raidor account</p>
+          <h1 className="text-2xl font-bold text-gray-100">
+            {step === 'signup' ? 'Create an account' : 'Verify Phone Number'}
+          </h1>
+          <p className="text-sm font-medium text-gray-400">
+            {step === 'signup' ? 'Create a new Raidor account' : `Enter the 6-digit code sent to ${phone}`}
+          </p>
         </div>
 
         {error && (
@@ -54,44 +81,71 @@ export function SignUp() {
           </div>
         )}
 
-        <form onSubmit={handleSignUp} className="flex flex-col gap-y-3">
-          <div>
-            <label className="text-sm font-medium text-gray-400">Phone Number</label>
-            <Input
-              placeholder="+1234567890"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-            />
-          </div>
+        {step === 'signup' ? (
+          <form onSubmit={handleSignUp} className="flex flex-col gap-y-3">
+            <div>
+              <label className="text-sm font-medium text-gray-400">Phone Number</label>
+              <Input
+                placeholder="+1234567890"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
+            </div>
 
-          <div>
-            <label className="text-sm font-medium text-gray-400">Password</label>
-            <Input
-              placeholder="***********"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
+            <div>
+              <label className="text-sm font-medium text-gray-400">Password</label>
+              <Input
+                placeholder="***********"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
-          <div>
-            <label className="text-sm font-medium text-gray-400">Confirm Password</label>
-            <Input
-              placeholder="***********"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-          </div>
+            <div>
+              <label className="text-sm font-medium text-gray-400">Confirm Password</label>
+              <Input
+                placeholder="***********"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
 
-          <Button type="submit" className="w-full mt-3" disabled={isLoading}>
-            {isLoading ? 'Creating account...' : 'Sign Up'}
-          </Button>
-        </form>
+            <Button type="submit" className="w-full mt-3" disabled={isLoading}>
+              {isLoading ? 'Creating account...' : 'Sign Up'}
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-y-3">
+            <div>
+              <label className="text-sm font-medium text-gray-400">6-Digit Code</label>
+              <Input
+                placeholder="123456"
+                type="text"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full mt-3" disabled={isLoading}>
+              {isLoading ? 'Verifying...' : 'Verify Code'}
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => setStep('signup')}
+              className="text-xs text-gray-400 hover:underline mt-2"
+            >
+              ← Back to Sign Up
+            </button>
+          </form>
+        )}
 
         <p className="text-center text-sm text-gray-400">
           Already have an account?{' '}
