@@ -5,14 +5,36 @@ import { SignUp } from "./pages/SignUp"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider } from "./context/AuthContext"
 import { ProtectedRoute } from "./components/ProtectedRoute"
+import { PublicRoute } from "./components/PublicRoute"
+import { useEffect } from "react"
+import { supabase } from "./lib/supabase"
 
 function App() {
+  useEffect(() => {
+    async function fetchProfiles() {
+      const { data, error } = await supabase.from('profiles').select('*');
+      console.log('--- PROFILES TABLE CONTENT ---');
+      console.log('Data:', data);
+      console.log('Error:', error);
+    }
+
+    fetchProfiles();
+  }, []);
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
+          {/* Public Routes */}
+          <Route path="/login" element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } />
+          <Route path="/signup" element={
+            <PublicRoute>
+              <SignUp />
+            </PublicRoute>
+          } />
 
           {/* Protexted Routes */}
           <Route

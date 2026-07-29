@@ -9,8 +9,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({
-  user: null,
-  session: null,
+  user: null, session: null,
   loading: false,
 })
 

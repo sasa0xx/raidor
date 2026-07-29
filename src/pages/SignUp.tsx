@@ -9,6 +9,7 @@ export function SignUp() {
   const [step, setStep] = useState<'signup' | 'verify'>('signup');
 
   const [phone, setPhone] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otp, setOtp] = useState('');
@@ -31,6 +32,7 @@ export function SignUp() {
       const { data, error: signUpError } = await supabase.auth.signUp({
         phone,
         password,
+        options: { data: { username: username } }
       });
 
       if (signUpError) {
@@ -83,6 +85,17 @@ export function SignUp() {
 
         {step === 'signup' ? (
           <form onSubmit={handleSignUp} className="flex flex-col gap-y-3">
+            <div>
+              <label className="text-sm font-medium text-gray-400">Username</label>
+              <Input
+                placeholder="jhondoe"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+
             <div>
               <label className="text-sm font-medium text-gray-400">Phone Number</label>
               <Input
