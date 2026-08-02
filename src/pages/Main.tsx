@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { FaUserEdit } from "react-icons/fa";
 import { IoChatbubbleEllipsesSharp, IoSend } from "react-icons/io5";
+import { FiSun, FiMoon } from "react-icons/fi";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { useAuth } from "../context/AuthContext";
@@ -36,7 +37,7 @@ interface Card {
 }
 
 export function Main() {
-  const { username, friends, user, refreshFriends } = useAuth();
+  const { username, friends, user, refreshFriends, theme, setTheme } = useAuth();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -63,33 +64,38 @@ export function Main() {
     userRef.current = user;
     friendsRef.current = friends;
     usernameRef.current = username;
-  }, [user, friends, username])
+  }, [user, friends, username]);
 
   useEffect(() => {
-    console.log("started listening!")
+    console.log("started listening!");
     const channel = supabase
-      .channel('messages-changes')
+      .channel("messages-changes")
       .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
-          console.log(payload)
+          console.log(payload);
           const newMessage = payload.new as Message;
-          setMessages(prev => {
-            if (prev.some(m => m.id === newMessage.id)) return prev;
-            return [...prev, newMessage]
-          })
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMessage.id)) return prev;
+            return [...prev, newMessage];
+          });
 
-          if (!friendsRef.current.includes(newMessage.sender_id) && newMessage.sender_id != userRef.current?.id) {
+          if (
+            !friendsRef.current.includes(newMessage.sender_id) &&
+            newMessage.sender_id != userRef.current?.id
+          ) {
             refreshFriends();
           }
         }
-      ).subscribe((status) => {
-        console.log('Realtime status:', status);
+      )
+      .subscribe((status) => {
+        console.log("Realtime status:", status);
       });
 
-    return () => { supabase.removeChannel(channel); };
-
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -171,13 +177,20 @@ export function Main() {
     if (!newMessage.trim() || !selectedUserId) return;
 
     const insertMessage = async () => {
-      const { data, error } = await supabase.from('messages').insert({ sender_id: user?.id, receiver_id: selectedUserId, content: newMessage.trim() }).select().single()
+      const { data, error } = await supabase
+        .from("messages")
+        .insert({
+          sender_id: user?.id,
+          receiver_id: selectedUserId,
+          content: newMessage.trim(),
+        })
+        .select()
+        .single();
 
-      if (error || !data)
-        return;
+      if (error || !data) return;
 
-      setMessages(p => [...p, data]);
-    }
+      setMessages((p) => [...p, data]);
+    };
 
     insertMessage();
     setNewMessage("");
@@ -187,20 +200,28 @@ export function Main() {
     e.preventDefault();
 
     const addFriend = async () => {
-      const { data, error } = await supabase.from('profiles').select("id").eq('username', windowUsername).single()
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", windowUsername)
+        .single();
 
       if (error || !data) {
-        setWindowError("Cannot find a user with that username.")
+        setWindowError("Cannot find a user with that username.");
         return;
       }
-      await supabase.from('messages').insert({ sender_id: user?.id, receiver_id: data.id, content: `${username} Started the conversation` })
+      await supabase.from("messages").insert({
+        sender_id: user?.id,
+        receiver_id: data.id,
+        content: `${username} Started the conversation`,
+      });
 
-      await refreshFriends()
+      await refreshFriends();
       setIsWindowOpen(false);
-    }
+    };
 
     addFriend();
-  }
+  };
 
   return (
     <div>
@@ -210,14 +231,14 @@ export function Main() {
           onClick={() => setIsWindowOpen(false)}
         >
           <div
-            className="w-80 rounded-2xl border p-4 flex flex-col shadow-2xl text-white border-gray-800 bg-gray-900"
+            className="w-80 rounded-2xl border p-4 flex flex-col shadow-2xl bg-white text-slate-900 border-slate-200 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-lg">Add friend</h3>
               <Button
                 varient="ghost"
-                className="px-2 py-1 border-0"
+                className="px-2 py-1 border-0 hover:bg-slate-100 dark:hover:bg-gray-800"
                 onClick={() => setIsWindowOpen(false)}
               >
                 ✕
@@ -225,18 +246,21 @@ export function Main() {
             </div>
 
             {windowError && (
-              <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg mb-4">
+              <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg mb-4">
                 {windowError}
               </div>
             )}
             <form onSubmit={handleAddFriend}>
-              <p className="text-sm text-gray-100 mb-2">username</p>
-              <Input placeholder="username" value={windowUsername} onChange={(e) => setWindowUsername(e.target.value)} />
-
+              <p className="text-sm text-slate-700 dark:text-gray-100 mb-2">username</p>
+              <Input
+                placeholder="username"
+                value={windowUsername}
+                onChange={(e) => setWindowUsername(e.target.value)}
+              />
               <Button
                 varient="secondary"
                 type="submit"
-                className='mt-4'
+                className="mt-4 w-full"
               >
                 Add friend
               </Button>
@@ -245,107 +269,144 @@ export function Main() {
         </div>
       )}
 
-      <div className="h-screen w-screen overflow-hidden flex bg-gray-950 text-gray-100">
-        <aside className="flex flex-col w-72 border-r bg-gray-900 border-gray-800/80">
-          <div className="flex items-center justify-between p-3.5 border-b border-gray-800">
+      <div className="h-screen w-screen overflow-hidden flex bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-200">
+        <aside className="flex flex-col w-72 border-r bg-white border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 transition-colors duration-200">
+          <div className="flex items-center justify-between p-3.5 border-b border-slate-200 dark:border-gray-800">
             <div className="flex gap-x-2.5 items-center">
               <div className="h-9 w-9 rounded-xl bg-violet-600 flex items-center justify-center font-bold text-white shadow-sm">
                 {username ? username[0]?.toUpperCase() : "?"}
               </div>
-              <p className="font-semibold text-sm text-gray-100">{username}</p>
+              <p className="font-semibold text-sm text-slate-900 dark:text-gray-100">{username}</p>
             </div>
-            <Button
-              varient="ghost"
-              className="p-2 border-0 hover:bg-gray-800 text-gray-400 hover:text-gray-100"
-              onClick={() => setIsWindowOpen(true)}
-            >
-              <FaUserEdit size={18} />
-            </Button>
+
+            <div className="flex items-center gap-x-1">
+              <Button
+                varient="ghost"
+                className="p-2 border-0 hover:bg-slate-100 text-slate-500 hover:text-slate-900 dark:hover:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+                onClick={() => setTheme?.(theme === "dark" ? "light" : "dark")}
+                title="Toggle Theme"
+              >
+                {theme === "dark" ? (
+                  <FiSun size={18} className="text-amber-400" />
+                ) : (
+                  <FiMoon size={18} />
+                )}
+              </Button>
+
+              <Button
+                varient="ghost"
+                className="p-2 border-0 hover:bg-slate-100 text-slate-500 hover:text-slate-900 dark:hover:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+                onClick={() => setIsWindowOpen(true)}
+              >
+                <FaUserEdit size={18} />
+              </Button>
+            </div>
           </div>
 
           <div className="p-3">
-            <Input className="py-1.5 px-3 text-sm bg-gray-950/60 border-gray-800" placeholder="Search conversations" value={filter} onChange={(e) => setFilter(e.target.value)} />
+            <Input
+              className="py-1.5"
+              placeholder="Search conversations"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
           </div>
 
           <div className="flex-1 overflow-y-auto px-2 space-y-1">
             {friendList.length === 0 ? (
-              <div className="p-8 text-center text-sm text-gray-500">
+              <div className="p-8 text-center text-sm text-slate-400 dark:text-gray-500">
                 No conversations yet
               </div>
             ) : (
-              friendList.filter(f => f.username.toLowerCase().includes(filter.toLowerCase())).map((chat) => {
-                const isSelected = chat.id === selectedUserId;
-                return (
-                  <div
-                    key={chat.id}
-                    className={`flex items-center gap-x-3 p-2.5 rounded-xl transition-all cursor-pointer group ${isSelected
-                      ? "bg-gray-800 text-white"
-                      : "hover:bg-gray-800/50 text-gray-300"
-                      }`}
-                    onClick={() => setSelectedUserId(chat.id)}
-                  >
-                    <div className="relative flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center text-gray-100 font-bold text-sm shadow-sm">
-                        {chat.username.charAt(0).toUpperCase()}
-                      </div>
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <h3 className="text-sm font-semibold truncate">
-                          {chat.username}
-                        </h3>
+              friendList
+                .filter((f) => f.username.toLowerCase().includes(filter.toLowerCase()))
+                .map((chat) => {
+                  const isSelected = chat.id === selectedUserId;
+                  return (
+                    <div
+                      key={chat.id}
+                      className={`flex items-center gap-x-3 p-2.5 rounded-xl transition-all cursor-pointer group ${isSelected
+                        ? "bg-slate-200 text-slate-900 dark:bg-gray-800 dark:text-white font-medium"
+                        : "hover:bg-slate-100 text-slate-700 dark:hover:bg-gray-800/50 dark:text-gray-300"
+                        }`}
+                      onClick={() => setSelectedUserId(chat.id)}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center text-gray-100 font-bold text-sm shadow-sm">
+                          {chat.username.charAt(0).toUpperCase()}
+                        </div>
                       </div>
 
-                      <p className="text-xs text-gray-400 truncate">
-                        {chat.lastMessage ? (
-                          <>
-                            <span className="font-medium text-gray-300">
-                              {chat.sender}:
-                            </span>{" "}
-                            {chat.lastMessage}
-                          </>
-                        ) : (
-                          <span className="italic text-gray-500">No messages yet</span>
-                        )}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <h3 className="text-sm font-semibold truncate">
+                            {chat.username}
+                          </h3>
+                        </div>
+
+                        <p className="text-xs text-slate-500 dark:text-gray-400 truncate">
+                          {chat.lastMessage ? (
+                            <>
+                              <span className="font-medium text-slate-700 dark:text-gray-300">
+                                {chat.sender}:
+                              </span>{" "}
+                              {chat.lastMessage}
+                            </>
+                          ) : (
+                            <span className="italic text-slate-400 dark:text-gray-500">
+                              No messages yet
+                            </span>
+                          )}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })
             )}
           </div>
         </aside>
 
-        <main className="flex-1 flex flex-col h-full bg-gray-950 min-w-0">
+        <main className="flex-1 flex flex-col h-full bg-slate-100/50 dark:bg-gray-950 min-w-0 transition-colors duration-200">
           {activeFriend && (
-            <div className="px-6 py-3.5 bg-gray-900 border-b border-gray-800/80 flex items-center gap-x-3.5 shadow-xs">
+            <div className="px-6 py-3.5 bg-white border-b border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 flex items-center gap-x-3.5 shadow-xs">
               <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-sm text-white">
                 {activeFriend.username.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h2 className="font-semibold text-sm text-gray-100">{activeFriend.username}</h2>
-                <span className="text-[11px] text-violet-400 font-medium">Active Chat</span>
+                <h2 className="font-semibold text-sm text-slate-900 dark:text-gray-100">
+                  {activeFriend.username}
+                </h2>
+                <span className="text-[11px] text-violet-600 dark:text-violet-400 font-medium">
+                  Active Chat
+                </span>
               </div>
             </div>
           )}
 
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-y-3">
             {!selectedUserId ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-500">
-                <div className="w-14 h-14 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-3 text-violet-400 shadow-inner">
-                  <IoChatbubbleEllipsesSharp size="28" color="#fff" />
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-gray-500">
+                <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 dark:bg-gray-900 dark:border-gray-800 flex items-center justify-center mb-3 text-violet-500 dark:text-violet-400 shadow-inner">
+                  <IoChatbubbleEllipsesSharp size="28" />
                 </div>
-                <p className="text-base font-semibold text-gray-300">Select a conversation</p>
-                <p className="text-xs text-gray-500 mt-1">Choose a friend from the left panel to start messaging.</p>
+                <p className="text-base font-semibold text-slate-700 dark:text-gray-300">
+                  Select a conversation
+                </p>
+                <p className="text-xs text-slate-500 dark:text-gray-500 mt-1">
+                  Choose a friend from the left panel to start messaging.
+                </p>
               </div>
             ) : messages.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-500">
-                <div className="w-12 h-12 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center mb-3 text-violet-400">
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-gray-500">
+                <div className="w-12 h-12 rounded-full bg-white border border-slate-200 dark:bg-gray-900 dark:border-gray-800 flex items-center justify-center mb-3 text-violet-500 dark:text-violet-400">
                   <IoChatbubbleEllipsesSharp size="22" />
                 </div>
-                <p className="text-sm font-medium text-gray-400">No messages yet</p>
-                <p className="text-xs text-gray-600 mt-1">Send a message below to kick off the chat!</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-gray-400">
+                  No messages yet
+                </p>
+                <p className="text-xs text-slate-400 dark:text-gray-600 mt-1">
+                  Send a message below to kick off the chat!
+                </p>
               </div>
             ) : (
               messages.map((message) => {
@@ -354,18 +415,19 @@ export function Main() {
                 return (
                   <div
                     key={message.id}
-                    className={`flex flex-col w-full ${isMe ? "items-end" : "items-start"}`}
+                    className={`flex flex-col w-full ${isMe ? "items-end" : "items-start"
+                      }`}
                   >
                     <div
                       className={`max-w-[75%] md:max-w-md px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-xs break-words ${isMe
                         ? "bg-violet-600 text-white rounded-br-xs"
-                        : "bg-gray-800/90 text-gray-100 border border-gray-700/50 rounded-bl-xs"
+                        : "bg-white text-slate-900 border border-slate-200/80 dark:bg-gray-800/90 dark:text-gray-100 dark:border-gray-700/50 rounded-bl-xs"
                         }`}
                     >
                       {message.content}
                     </div>
 
-                    <span className="text-[10px] font-medium text-gray-500 mt-1 px-1">
+                    <span className="text-[10px] font-medium text-slate-400 dark:text-gray-500 mt-1 px-1">
                       {formatTime(message.sent_at)}
                     </span>
                   </div>
@@ -377,13 +439,13 @@ export function Main() {
           {selectedUserId && (
             <form
               onSubmit={handleSendMessage}
-              className="p-3 bg-gray-900 border-t border-gray-800/80 flex items-center gap-x-2"
+              className="p-3 bg-white border-t border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 flex items-center gap-x-2"
             >
               <Input
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder={`Message ${activeFriend?.username || "..."}`}
-                className="flex-1 bg-gray-950/80 border-gray-800 focus:border-violet-500 text-sm py-2 px-4"
+                className="flex-1 bg-slate-100 border-slate-200 dark:bg-gray-950/80 dark:border-gray-800 focus:border-violet-500 text-sm py-2 px-4"
               />
               <Button
                 type="submit"
