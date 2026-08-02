@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { FaUserEdit } from "react-icons/fa";
 import { IoChatbubbleEllipsesSharp, IoSend } from "react-icons/io5";
-import { FiSun, FiMoon } from "react-icons/fi";
+import { FiSun, FiMoon, FiMenu, FiX } from "react-icons/fi";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { useAuth } from "../context/AuthContext";
@@ -42,6 +42,7 @@ export function Main() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isWindowOpen, setIsWindowOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [friendList, setFriendList] = useState<Card[]>([]);
   const [windowError, setWindowError] = useState("");
   const [windowUsername, setWindowUsername] = useState("");
@@ -269,8 +270,18 @@ export function Main() {
         </div>
       )}
 
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-xs"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       <div className="h-screen w-screen overflow-hidden flex bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-200">
-        <aside className="flex flex-col w-72 border-r bg-white border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 transition-colors duration-200">
+        <aside
+          className={`fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 flex flex-col transition-transform duration-200 ease-in-out md:static md:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+        >
           <div className="flex items-center justify-between p-3.5 border-b border-slate-200 dark:border-gray-800">
             <div className="flex gap-x-2.5 items-center">
               <div className="h-9 w-9 rounded-xl bg-violet-600 flex items-center justify-center font-bold text-white shadow-sm">
@@ -300,6 +311,14 @@ export function Main() {
               >
                 <FaUserEdit size={18} />
               </Button>
+
+              <Button
+                varient="ghost"
+                className="md:hidden p-2 border-0 hover:bg-slate-100 text-slate-500 hover:text-slate-900 dark:hover:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <FiX size={18} />
+              </Button>
             </div>
           </div>
 
@@ -326,10 +345,13 @@ export function Main() {
                     <div
                       key={chat.id}
                       className={`flex items-center gap-x-3 p-2.5 rounded-xl transition-all cursor-pointer group ${isSelected
-                        ? "bg-slate-200 text-slate-900 dark:bg-gray-800 dark:text-white font-medium"
-                        : "hover:bg-slate-100 text-slate-700 dark:hover:bg-gray-800/50 dark:text-gray-300"
+                          ? "bg-slate-200 text-slate-900 dark:bg-gray-800 dark:text-white font-medium"
+                          : "hover:bg-slate-100 text-slate-700 dark:hover:bg-gray-800/50 dark:text-gray-300"
                         }`}
-                      onClick={() => setSelectedUserId(chat.id)}
+                      onClick={() => {
+                        setSelectedUserId(chat.id);
+                        setIsSidebarOpen(false);
+                      }}
                     >
                       <div className="relative flex-shrink-0">
                         <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center text-gray-100 font-bold text-sm shadow-sm">
@@ -367,21 +389,35 @@ export function Main() {
         </aside>
 
         <main className="flex-1 flex flex-col h-full bg-slate-100/50 dark:bg-gray-950 min-w-0 transition-colors duration-200">
-          {activeFriend && (
-            <div className="px-6 py-3.5 bg-white border-b border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 flex items-center gap-x-3.5 shadow-xs">
-              <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-sm text-white">
-                {activeFriend.username.charAt(0).toUpperCase()}
+          <div className="px-4 py-3.5 bg-white border-b border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 flex items-center gap-x-3 shadow-xs">
+            <Button
+              varient="ghost"
+              className="md:hidden p-2 border-0 hover:bg-slate-100 text-slate-600 dark:hover:bg-gray-800 dark:text-gray-300"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <FiMenu size={20} />
+            </Button>
+
+            {activeFriend ? (
+              <div className="flex items-center gap-x-3.5">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-sm text-white">
+                  {activeFriend.username.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="font-semibold text-sm text-slate-900 dark:text-gray-100">
+                    {activeFriend.username}
+                  </h2>
+                  <span className="text-[11px] text-violet-600 dark:text-violet-400 font-medium">
+                    Active Chat
+                  </span>
+                </div>
               </div>
-              <div>
-                <h2 className="font-semibold text-sm text-slate-900 dark:text-gray-100">
-                  {activeFriend.username}
-                </h2>
-                <span className="text-[11px] text-violet-600 dark:text-violet-400 font-medium">
-                  Active Chat
-                </span>
-              </div>
-            </div>
-          )}
+            ) : (
+              <span className="text-sm font-semibold text-slate-700 dark:text-gray-300 md:hidden">
+                Conversations
+              </span>
+            )}
+          </div>
 
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-y-3">
             {!selectedUserId ? (
@@ -419,9 +455,9 @@ export function Main() {
                       }`}
                   >
                     <div
-                      className={`max-w-[75%] md:max-w-md px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-xs break-words ${isMe
-                        ? "bg-violet-600 text-white rounded-br-xs"
-                        : "bg-white text-slate-900 border border-slate-200/80 dark:bg-gray-800/90 dark:text-gray-100 dark:border-gray-700/50 rounded-bl-xs"
+                      className={`max-w-[85%] sm:max-w-[75%] md:max-w-md px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-xs break-words ${isMe
+                          ? "bg-violet-600 text-white rounded-br-xs"
+                          : "bg-white text-slate-900 border border-slate-200/80 dark:bg-gray-800/90 dark:text-gray-100 dark:border-gray-700/50 rounded-bl-xs"
                         }`}
                     >
                       {message.content}
