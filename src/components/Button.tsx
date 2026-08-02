@@ -1,4 +1,5 @@
 import React from 'react'
+import { cn } from '../lib/utils.ts'
 
 interface ButtonProps extends React.ComponentPropsWithoutRef<'button'> {
   varient?: 'primary' | 'secondary' | 'ghost';
@@ -21,7 +22,7 @@ export function Button({ className, varient: variant, children, ...props }: Butt
   return (
     <button
       {...props}
-      className={`${baseStyles} ${variantStyles} ${className || ''}`}
+      className={cn(`${baseStyles} ${variantStyles}`, className)}
     >
       {children}
     </button >

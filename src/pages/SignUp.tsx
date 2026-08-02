@@ -6,16 +6,15 @@ import { supabase } from "../lib/supabase";
 
 export function SignUp() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<'signup' | 'verify'>('signup');
 
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [otp, setOtp] = useState('');
 
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +29,7 @@ export function SignUp() {
 
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
-        phone,
+        email,
         password,
         options: { data: { username: username } }
       });
@@ -41,24 +40,12 @@ export function SignUp() {
       }
 
       console.log('Sign up successful:', data);
-      setStep('verify');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    try {
-      const { error: verifyError } = await supabase.auth.verifyOtp({ phone, token: otp, type: 'sms' });
-      if (verifyError) {
-        setError(verifyError.message);
-        return;
+      if (data.session) {
+        navigate('/');
+      } else {
+        setIsSubmitted(true);
       }
-      navigate('/');
     } finally {
       setIsLoading(false);
     }
@@ -70,10 +57,12 @@ export function SignUp() {
 
         <div className="space-y-1 text-center">
           <h1 className="text-2xl font-bold text-gray-100">
-            {step === 'signup' ? 'Create an account' : 'Verify Phone Number'}
+            {isSubmitted ? 'Check your email' : 'Create an account'}
           </h1>
           <p className="text-sm font-medium text-gray-400">
-            {step === 'signup' ? 'Create a new Raidor account' : `Enter the 6-digit code sent to ${phone}`}
+            {isSubmitted
+              ? `We sent a confirmation link to ${email}`
+              : 'Create a new Raidor account'}
           </p>
         </div>
 
@@ -83,7 +72,7 @@ export function SignUp() {
           </div>
         )}
 
-        {step === 'signup' ? (
+        {!isSubmitted ? (
           <form onSubmit={handleSignUp} className="flex flex-col gap-y-3">
             <div>
               <label className="text-sm font-medium text-gray-400">Username</label>
@@ -97,12 +86,12 @@ export function SignUp() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-400">Phone Number</label>
+              <label className="text-sm font-medium text-gray-400">Email Address</label>
               <Input
-                placeholder="+1234567890"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                placeholder="you@example.com"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
@@ -134,30 +123,14 @@ export function SignUp() {
             </Button>
           </form>
         ) : (
-          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-y-3">
-            <div>
-              <label className="text-sm font-medium text-gray-400">6-Digit Code</label>
-              <Input
-                placeholder="123456"
-                type="text"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full mt-3" disabled={isLoading}>
-              {isLoading ? 'Verifying...' : 'Verify Code'}
-            </Button>
-
-            <button
-              type="button"
-              onClick={() => setStep('signup')}
-              className="text-xs text-gray-400 hover:underline mt-2"
-            >
-              ← Back to Sign Up
-            </button>
-          </form>
+          <div className="text-center pt-2 space-y-4">
+            <p className="text-sm text-gray-300">
+              Please click the link sent to your inbox to confirm your email address and activate your account.
+            </p>
+            <Link to="/login">
+              <Button className="w-full">Go to Login</Button>
+            </Link>
+          </div>
         )}
 
         <p className="text-center text-sm text-gray-400">

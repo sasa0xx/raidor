@@ -5,7 +5,7 @@ import { Button } from "../components/Button";
 import { supabase } from "../lib/supabase"
 
 export function Login() {
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -16,7 +16,7 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      const { data, error: loginError } = await supabase.auth.signInWithPassword({ phone, password })
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password })
       if (loginError) {
         setError(loginError.message);
         return;
@@ -44,8 +44,8 @@ export function Login() {
 
         <form onSubmit={handleLogin} className="flex flex-col gap-y-3 mt-4">
           <div>
-            <label className="text-sm font-medium text-gray-400">Phone Number</label>
-            <Input placeholder="+1234567890" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+            <label className="text-sm font-medium text-gray-400">Email</label>
+            <Input placeholder="you@example.com" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
 
           <div>

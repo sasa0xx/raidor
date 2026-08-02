@@ -1,44 +1,105 @@
-import { supabase } from '../lib/supabase';
-import type { User, Session } from '@supabase/supabase-js';
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import type { Session, User } from "@supabase/supabase-js";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
-interface AuthContextType {
+type Theme = "light" | "dark";
+
+interface ContextType {
   user: User | null;
   session: Session | null;
+  friends: string[];
   loading: boolean;
+  username: string;
+  theme: Theme;
+  setTheme?: React.Dispatch<React.SetStateAction<Theme>>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null, session: null,
-  loading: false,
-})
+const Context = createContext<ContextType>({ user: null, session: null, friends: [], loading: true, username: "", theme: "dark" });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [username, setUsername] = useState("");
+  const [friends, setFriends] = useState<string[]>([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      setLoading(false);
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoading(false);
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [])
+  }, []);
+
+  useEffect(() => {
+    const updateAuthState = async () => {
+      if (!user) {
+        setUsername('');
+        return;
+      }
+      setLoading(true);
+
+      const { data, error } = await supabase.from('profiles').select('username').eq('id', user.id).single();
+      if (data && !error) {
+        setUsername(data.username);
+      }
+      if (error) {
+        setLoading(false);
+        console.log("ERROR ERROR ERRROORRR!!");
+        console.log(error);
+      }
+
+      const senderQuery = supabase
+        .from('messages')
+        .select('sender_id')
+        .not('sender_id', 'eq', user.id)
+
+      const receiverQuery = supabase
+        .from('messages')
+        .select('receiver_id')
+        .not('receiver_id', 'eq', user.id)
+
+      let [senderRes, receiverRes] = await Promise.all([senderQuery, receiverQuery]);
+      if (senderRes.error || receiverRes.error) {
+        console.log("ERROOOOOOR");
+        console.log(senderRes.error);
+        console.log(receiverRes.error);
+        setLoading(false);
+        return;
+      }
+      senderRes.data = senderRes.data ?? [];
+      receiverRes.data = receiverRes.data ?? [];
+
+      const flatUniqueArray = [
+        ...new Set([
+          ...senderRes.data.map(r => r.sender_id),
+          ...receiverRes.data.map(r => r.receiver_id)
+        ])
+      ];
+      setFriends(flatUniqueArray);
+      console.log("FLAT UNIQUE ARRAY");
+      console.log(flatUniqueArray);
+      setLoading(false);
+    };
+
+    updateAuthState()
+
+  }, [user])
 
   return (
-    <AuthContext.Provider value={{ user, session, loading }}>
+    <Context.Provider value={{ session, user, friends, loading, theme, username, setTheme }}>
       {children}
-    </AuthContext.Provider>
+    </Context.Provider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(Context);

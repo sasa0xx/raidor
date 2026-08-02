@@ -2,6 +2,7 @@ import { Input } from "./components/Input"
 import { Button } from "./components/Button"
 import { Login } from "./pages/Login"
 import { SignUp } from "./pages/SignUp"
+import { Main } from "./pages/Main"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider } from "./context/AuthContext"
 import { ProtectedRoute } from "./components/ProtectedRoute"
@@ -41,9 +42,12 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <div className="min-h-screen p-8 bg-gray-950 text-white">
-                  <h1 className="text-2xl font-bold">Welcome to Raidor!</h1>
-                </div>
+                {/* <div className="min-h-screen p-8 bg-gray-950 text-white"> */}
+                {/*   <h1 className="text-2xl font-bold">Welcome to Raidor!</h1> */}
+                {/* </div> */}
+                <Main>
+
+                </Main>
               </ProtectedRoute>
             }
           />
