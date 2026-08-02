@@ -12,9 +12,10 @@ interface ContextType {
   username: string;
   theme: Theme;
   setTheme?: React.Dispatch<React.SetStateAction<Theme>>;
+  refreshFriends: () => void;
 }
 
-const Context = createContext<ContextType>({ user: null, session: null, friends: [], loading: true, username: "", theme: "dark" });
+const Context = createContext<ContextType>({ user: null, session: null, friends: [], loading: true, username: "", theme: "dark", refreshFriends: () => { } });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -40,63 +41,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const updateAuthState = async () => {
-      if (!user) {
-        setUsername('');
-        return;
-      }
-      setLoading(true);
+  const refreshFriends = async () => {
+    if (!user) {
+      setUsername('');
+      return;
+    }
+    setLoading(true);
 
-      const { data, error } = await supabase.from('profiles').select('username').eq('id', user.id).single();
-      if (data && !error) {
-        setUsername(data.username);
-      }
-      if (error) {
-        setLoading(false);
-        console.log("ERROR ERROR ERRROORRR!!");
-        console.log(error);
-      }
-
-      const senderQuery = supabase
-        .from('messages')
-        .select('sender_id')
-        .not('sender_id', 'eq', user.id)
-
-      const receiverQuery = supabase
-        .from('messages')
-        .select('receiver_id')
-        .not('receiver_id', 'eq', user.id)
-
-      let [senderRes, receiverRes] = await Promise.all([senderQuery, receiverQuery]);
-      if (senderRes.error || receiverRes.error) {
-        console.log("ERROOOOOOR");
-        console.log(senderRes.error);
-        console.log(receiverRes.error);
-        setLoading(false);
-        return;
-      }
-      senderRes.data = senderRes.data ?? [];
-      receiverRes.data = receiverRes.data ?? [];
-
-      const flatUniqueArray = [
-        ...new Set([
-          ...senderRes.data.map(r => r.sender_id),
-          ...receiverRes.data.map(r => r.receiver_id)
-        ])
-      ];
-      setFriends(flatUniqueArray);
-      console.log("FLAT UNIQUE ARRAY");
-      console.log(flatUniqueArray);
+    const { data, error } = await supabase.from('profiles').select('username').eq('id', user.id).single();
+    if (data && !error) {
+      setUsername(data.username);
+    }
+    if (error) {
       setLoading(false);
-    };
+      console.log("ERROR ERROR ERRROORRR!!");
+      console.log(error);
+    }
 
-    updateAuthState()
+    const senderQuery = supabase
+      .from('messages')
+      .select('sender_id')
+      .not('sender_id', 'eq', user.id)
 
+    const receiverQuery = supabase
+      .from('messages')
+      .select('receiver_id')
+      .not('receiver_id', 'eq', user.id)
+
+    let [senderRes, receiverRes] = await Promise.all([senderQuery, receiverQuery]);
+    if (senderRes.error || receiverRes.error) {
+      console.log("ERROOOOOOR");
+      console.log(senderRes.error);
+      console.log(receiverRes.error);
+      setLoading(false);
+      return;
+    }
+    senderRes.data = senderRes.data ?? [];
+    receiverRes.data = receiverRes.data ?? [];
+
+    const flatUniqueArray = [
+      ...new Set([
+        ...senderRes.data.map(r => r.sender_id),
+        ...receiverRes.data.map(r => r.receiver_id)
+      ])
+    ];
+    setFriends(flatUniqueArray);
+    console.log("FLAT UNIQUE ARRAY");
+    console.log(flatUniqueArray);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    refreshFriends()
   }, [user])
 
   return (
-    <Context.Provider value={{ session, user, friends, loading, theme, username, setTheme }}>
+    <Context.Provider value={{ session, user, friends, loading, theme, username, setTheme, refreshFriends }}>
       {children}
     </Context.Provider>
   );
