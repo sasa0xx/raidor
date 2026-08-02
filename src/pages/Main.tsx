@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FaUserEdit } from "react-icons/fa";
 import { IoChatbubbleEllipsesSharp, IoSend } from "react-icons/io5";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 interface Message {
   id: string;
@@ -43,6 +44,9 @@ export function Main() {
   const [friendList, setFriendList] = useState<Card[]>([]);
   const [windowError, setWindowError] = useState("");
   const [windowUsername, setWindowUsername] = useState("");
+  const userRef = useRef<User | null>(null);
+  const friendsRef = useRef<string[]>([]);
+  const usernameRef = useRef("");
 
   const activeFriend = friendList.find((f) => f.id === selectedUserId);
 
@@ -53,6 +57,12 @@ export function Main() {
       ? ""
       : date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
+
+  useEffect(() => {
+    userRef.current = user;
+    friendsRef.current = friends;
+    usernameRef.current = username;
+  }, [user, friends, username])
 
   useEffect(() => {
     console.log("started listening!")
@@ -68,6 +78,10 @@ export function Main() {
             if (prev.some(m => m.id === newMessage.id)) return prev;
             return [...prev, newMessage]
           })
+
+          if (!friendsRef.current.includes(newMessage.sender_id) && newMessage.sender_id != userRef.current?.id) {
+            refreshFriends();
+          }
         }
       ).subscribe((status) => {
         console.log('Realtime status:', status);
@@ -87,7 +101,7 @@ export function Main() {
           sent:messages!sender_id(content, sent_at, sender:profiles!sender_id(username)),
           received:messages!receiver_id(content, sent_at, sender:profiles!sender_id(username))
         `)
-        .in("id", friends)
+        .in("id", friendsRef.current)
         .order("sent_at", { referencedTable: "sent", ascending: false })
         .limit(1, { referencedTable: "sent" })
         .order("sent_at", { referencedTable: "received", ascending: false })
@@ -120,7 +134,7 @@ export function Main() {
         return {
           id: profile.id,
           username: profile.username ?? "",
-          sender: sn === username ? "You" : sn,
+          sender: sn === usernameRef.current ? "You" : sn,
           lastMessage: latestMsg?.content ?? "",
         };
       });
@@ -129,7 +143,7 @@ export function Main() {
     };
 
     fetchStuff();
-  }, [friends, username]);
+  }, []);
 
   useEffect(() => {
     if (!selectedUserId) {
