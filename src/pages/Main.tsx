@@ -44,6 +44,7 @@ export function Main() {
   const [friendList, setFriendList] = useState<Card[]>([]);
   const [windowError, setWindowError] = useState("");
   const [windowUsername, setWindowUsername] = useState("");
+  const [filter, setFilter] = useState("");
   const userRef = useRef<User | null>(null);
   const friendsRef = useRef<string[]>([]);
   const usernameRef = useRef("");
@@ -263,7 +264,7 @@ export function Main() {
           </div>
 
           <div className="p-3">
-            <Input className="py-1.5 px-3 text-sm bg-gray-950/60 border-gray-800" placeholder="Search conversations" />
+            <Input className="py-1.5 px-3 text-sm bg-gray-950/60 border-gray-800" placeholder="Search conversations" value={filter} onChange={(e) => setFilter(e.target.value)} />
           </div>
 
           <div className="flex-1 overflow-y-auto px-2 space-y-1">
@@ -272,7 +273,7 @@ export function Main() {
                 No conversations yet
               </div>
             ) : (
-              friendList.map((chat) => {
+              friendList.filter(f => f.username.toLowerCase().includes(filter.toLowerCase())).map((chat) => {
                 const isSelected = chat.id === selectedUserId;
                 return (
                   <div
