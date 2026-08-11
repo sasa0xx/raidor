@@ -29,6 +29,10 @@ type RawProfile = {
   received: RawMessage[];
 };
 
+type Presence = {
+  user_id: string;
+}
+
 interface Card {
   id: string;
   username: string;
@@ -46,12 +50,16 @@ export function Main() {
   const [friendList, setFriendList] = useState<Card[]>([]);
   const [windowError, setWindowError] = useState("");
   const [windowUsername, setWindowUsername] = useState("");
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
   const userRef = useRef<User | null>(null);
   const friendsRef = useRef<string[]>([]);
   const usernameRef = useRef("");
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const activeFriend = friendList.find((f) => f.id === selectedUserId);
+  const isActiveFriendOnline =
+    activeFriend && onlineUsers.includes(activeFriend.id);
 
   const formatTime = (dateString?: string) => {
     if (!dateString) return "";
@@ -68,7 +76,38 @@ export function Main() {
   }, [user, friends, username]);
 
   useEffect(() => {
-    console.log("started listening!");
+    if (!user) return;
+
+    const channel = supabase.channel('online-users');
+
+    const updateOnlineUsers = () => {
+      const state = channel.presenceState();
+
+      const users = Object.values(state)
+        .flat()
+        .map((presence) => (presence as unknown as Presence).user_id);
+
+      setOnlineUsers(users);
+    };
+
+    channel
+      .on("presence", { event: "sync" }, updateOnlineUsers)
+      .on("presence", { event: "join" }, updateOnlineUsers)
+      .on("presence", { event: "leave" }, updateOnlineUsers)
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel.track({
+            user_id: user.id,
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  useEffect(() => {
     const channel = supabase
       .channel("messages-changes")
       .on(
@@ -172,6 +211,13 @@ export function Main() {
 
     fetchMessages();
   }, [selectedUserId]);
+
+  useEffect(() => {
+    messagesContainerRef.current?.scrollTo({
+      top: messagesContainerRef.current.scrollHeight,
+      behavior: "smooth"
+    });
+  }, [messages])
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -345,8 +391,8 @@ export function Main() {
                     <div
                       key={chat.id}
                       className={`flex items-center gap-x-3 p-2.5 rounded-xl transition-all cursor-pointer group ${isSelected
-                          ? "bg-slate-200 text-slate-900 dark:bg-gray-800 dark:text-white font-medium"
-                          : "hover:bg-slate-100 text-slate-700 dark:hover:bg-gray-800/50 dark:text-gray-300"
+                        ? "bg-slate-200 text-slate-900 dark:bg-gray-800 dark:text-white font-medium"
+                        : "hover:bg-slate-100 text-slate-700 dark:hover:bg-gray-800/50 dark:text-gray-300"
                         }`}
                       onClick={() => {
                         setSelectedUserId(chat.id);
@@ -389,7 +435,7 @@ export function Main() {
         </aside>
 
         <main className="flex-1 flex flex-col h-full bg-slate-100/50 dark:bg-gray-950 min-w-0 transition-colors duration-200">
-          <div className="px-4 py-3.5 bg-white border-b border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 flex items-center gap-x-3 shadow-xs">
+          <header className="px-4 py-3.5 bg-white border-b border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 flex items-center gap-x-3 shadow-xs">
             <Button
               varient="ghost"
               className="md:hidden p-2 border-0 hover:bg-slate-100 text-slate-600 dark:hover:bg-gray-800 dark:text-gray-300"
@@ -408,7 +454,7 @@ export function Main() {
                     {activeFriend.username}
                   </h2>
                   <span className="text-[11px] text-violet-600 dark:text-violet-400 font-medium">
-                    Active Chat
+                    {isActiveFriendOnline ? "Online" : "Offline"}
                   </span>
                 </div>
               </div>
@@ -417,9 +463,9 @@ export function Main() {
                 Conversations
               </span>
             )}
-          </div>
+          </header>
 
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-y-3">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 flex flex-col gap-y-3">
             {!selectedUserId ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-gray-500">
                 <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 dark:bg-gray-900 dark:border-gray-800 flex items-center justify-center mb-3 text-violet-500 dark:text-violet-400 shadow-inner">
@@ -456,8 +502,8 @@ export function Main() {
                   >
                     <div
                       className={`max-w-[85%] sm:max-w-[75%] md:max-w-md px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-xs break-words ${isMe
-                          ? "bg-violet-600 text-white rounded-br-xs"
-                          : "bg-white text-slate-900 border border-slate-200/80 dark:bg-gray-800/90 dark:text-gray-100 dark:border-gray-700/50 rounded-bl-xs"
+                        ? "bg-violet-600 text-white rounded-br-xs"
+                        : "bg-white text-slate-900 border border-slate-200/80 dark:bg-gray-800/90 dark:text-gray-100 dark:border-gray-700/50 rounded-bl-xs"
                         }`}
                     >
                       {message.content}
