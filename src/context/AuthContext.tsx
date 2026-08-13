@@ -4,18 +4,18 @@ import { supabase } from "../lib/supabase";
 
 type Theme = "light" | "dark";
 
-interface ContextType {
+interface AuthContextType {
   user: User | null;
   session: Session | null;
   friends: string[];
   loading: boolean;
   username: string;
   theme: Theme;
-  setTheme?: React.Dispatch<React.SetStateAction<Theme>>;
+  setTheme: React.Dispatch<React.SetStateAction<Theme>>;
   refreshFriends: () => void;
 }
 
-const Context = createContext<ContextType>({ user: null, session: null, friends: [], loading: true, username: "", theme: "dark", refreshFriends: () => { } });
+const Context = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -112,4 +112,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const useAuth = () => useContext(Context);
+export function useAuth() {
+  const context = useContext(Context);
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
+  return context;
+}

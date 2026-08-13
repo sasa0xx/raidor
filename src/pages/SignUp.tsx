@@ -16,7 +16,7 @@ export function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setError('');
 
