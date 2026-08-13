@@ -13,7 +13,7 @@ export function ChatForm() {
 
   const activeFriend = friendList.find((f) => f.id === selectedUserId);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUserId) return;
 

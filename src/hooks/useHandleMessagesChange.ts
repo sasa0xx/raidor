@@ -6,7 +6,7 @@ import type { User } from "@supabase/supabase-js";
 
 export function useHandleMessageChange(
   friendsRef: React.RefObject<string[]>,
-  userRef: React.RefObject<User>,
+  userRef: React.RefObject<User | null>,
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>
 ) {
   const { refreshFriends } = useAuth();
