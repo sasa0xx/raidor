@@ -4,3 +4,7 @@
 @utility small-btn {
   @apply p-2! border-0! hover:bg-slate-100! text-slate-500! hover:text-slate-900! dark:hover:bg-gray-800! dark:text-gray-400! dark:hover:text-gray-100! transition-colors;
 }
+
+@utility message-action {
+  @apply p-1.5! border-0! rounded-md! text-slate-500! hover:text-slate-900! hover:bg-slate-100! dark:text-gray-400! dark:hover:text-gray-100! dark:hover:bg-gray-700! transition-colors;
+}

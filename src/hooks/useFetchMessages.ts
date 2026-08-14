@@ -15,7 +15,8 @@ export function useFetchMessages(selectedUserId: string | null) {
       const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .or(`receiver_id.eq.${selectedUserId},sender_id.eq.${selectedUserId}`);
+        .or(`receiver_id.eq.${selectedUserId},sender_id.eq.${selectedUserId}`)
+        .order("sent_at", { ascending: true });
 
       if (data && !error) {
         setMessages(data);

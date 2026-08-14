@@ -31,6 +31,7 @@ export interface Message {
   receiver_id: string;
   content: string;
   sent_at: string;
+  edited_at: string | null;
 }
 
 interface ChatContextType {
