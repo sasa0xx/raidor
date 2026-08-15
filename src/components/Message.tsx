@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Input } from "./Input";
 import { Button } from "./Button";
 import { MdDeleteForever, MdEdit } from "react-icons/md";
@@ -45,15 +45,38 @@ export function Message({
     : null;
 
   const [swipeX, setSwipeX] = useState(0);
+  const [isMobileSelected, setIsMobileSelected] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasMoved = useRef(false);
+
+  const clearLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
 
     touchStartX.current = touch.clientX;
     touchStartY.current = touch.clientY;
+    hasMoved.current = false;
+
+    clearLongPress();
+
+    longPressTimer.current = setTimeout(() => {
+      if (!hasMoved.current && !isMobileSelected) {
+        setIsMobileSelected(true);
+        window.history.pushState(
+          { messageSelected: true },
+          ""
+        );
+      }
+    }, 500);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -69,18 +92,20 @@ export function Message({
     const dx = touch.clientX - touchStartX.current;
     const dy = touch.clientY - touchStartY.current;
 
-    // Don't interfere with normal vertical scrolling.
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+      hasMoved.current = true;
+      clearLongPress();
+    }
+
     if (Math.abs(dy) > Math.abs(dx)) {
       return;
     }
 
     if (isMe) {
-      // Your messages → swipe left.
       if (dx < 0) {
         setSwipeX(Math.max(dx, -100));
       }
     } else {
-      // Their messages → swipe right.
       if (dx > 0) {
         setSwipeX(Math.min(dx, 100));
       }
@@ -88,6 +113,8 @@ export function Message({
   };
 
   const handleTouchEnd = () => {
+    clearLongPress();
+
     if (Math.abs(swipeX) > 60) {
       setReplyTarget();
     }
@@ -96,7 +123,33 @@ export function Message({
 
     touchStartX.current = null;
     touchStartY.current = null;
+    hasMoved.current = false;
   };
+
+  const handleTouchCancel = () => {
+    clearLongPress();
+
+    setSwipeX(0);
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+    hasMoved.current = false;
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isMobileSelected) {
+        setIsMobileSelected(false);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      clearLongPress();
+    };
+  }, [isMobileSelected]);
 
   const formatTime = (dateString?: string) => {
     if (!dateString) return "";
@@ -112,6 +165,8 @@ export function Message({
         minute: "2-digit",
       });
   };
+
+  const showActions = isMobileSelected || isReplyTarget;
 
   return (
     <React.Fragment key={message.id}>
@@ -150,7 +205,6 @@ export function Message({
         </form>
       ) : (
         <div className="relative w-full">
-          {/* Swipe reply indicator */}
           <div
             className={`absolute top-1/2 -translate-y-1/2 text-violet-500 ${isMe ? "right-2" : "left-2"
               }`}
@@ -161,26 +215,28 @@ export function Message({
             <FaReply />
           </div>
 
-          {/* Message itself */}
           <div
-            className={`group relative px-4 py-1.5 flex flex-col w-full transition-colors ${isMe ? "items-end" : "items-start"
-              } ${isReplyTarget
+            className={`group relative px-4 py-1.5 flex flex-col w-full select-none transition-colors ${isMe ? "items-end" : "items-start"
+              } ${isReplyTarget || isMobileSelected
                 ? "bg-violet-500/10 dark:bg-violet-500/10"
                 : "hover:bg-black/5 dark:hover:bg-white/5"
               }`}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchCancel}
             style={{
               transform: `translateX(${swipeX}px)`,
+              WebkitUserSelect: "none",
+              userSelect: "none",
+              touchAction: "pan-y",
             }}
           >
-            {/* Desktop action buttons */}
             <div
               className={`absolute right-4 -top-5 items-center gap-0.5
                 p-1 rounded-lg bg-white border border-slate-200 shadow-md
                 dark:bg-gray-800 dark:border-gray-700
-                ${isReplyTarget
+                ${showActions
                   ? "flex"
                   : "hidden group-hover:flex"
                 }`}
@@ -195,6 +251,7 @@ export function Message({
                     onClick={() => {
                       setIsEditing(true);
                       setEditingContent(message.content);
+                      setIsMobileSelected(false);
                     }}
                   >
                     <MdEdit size={15} />
@@ -205,7 +262,10 @@ export function Message({
                     varient="ghost"
                     className="message-action"
                     aria-label="Delete message"
-                    onClick={() => deleteMessage()}
+                    onClick={() => {
+                      deleteMessage();
+                      setIsMobileSelected(false);
+                    }}
                   >
                     <MdDeleteForever size={16} />
                   </Button>
@@ -217,13 +277,15 @@ export function Message({
                 varient="ghost"
                 className="message-action"
                 aria-label="Reply to message"
-                onClick={() => setReplyTarget()}
+                onClick={() => {
+                  setReplyTarget();
+                  setIsMobileSelected(false);
+                }}
               >
                 <FaReply size={16} />
               </Button>
             </div>
 
-            {/* Message bubble */}
             <div
               className={`max-w-[85%] sm:max-w-[75%] md:max-w-md px-4 py-2.5
                 rounded-2xl text-sm leading-relaxed shadow-xs
@@ -232,7 +294,6 @@ export function Message({
                   : "bg-white text-slate-900 border border-slate-200/80 dark:bg-gray-800/90 dark:text-gray-100 dark:border-gray-700/50 rounded-bl-xs"
                 }`}
             >
-              {/* Replied message preview */}
               {repliedMessage && (
                 <div
                   className={`mb-2 px-3 py-2 rounded-lg border-l-2 text-xs ${isMe
@@ -259,7 +320,6 @@ export function Message({
               {message.content}
             </div>
 
-            {/* Timestamp */}
             <span className="text-[10px] font-medium text-slate-400 dark:text-gray-500 mt-1 px-1">
               {formatTime(message.sent_at)}
               {message.edited_at && " · edited"}
