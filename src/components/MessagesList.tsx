@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useChat } from "../context/ChatContext";
 import { IoChatbubbleEllipsesSharp } from "react-icons/io5";
 import { Message } from "./Message";
@@ -9,6 +9,11 @@ export function MessagesList({
   ref: React.RefObject<HTMLDivElement | null>;
 }) {
   const { selectedUserId, messages } = useChat();
+
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(
+    null
+  );
+  const [editingContent, setEditingContent] = useState("");
 
   return (
     <div
@@ -46,7 +51,19 @@ export function MessagesList({
       ) : (
         messages.map((message) => {
           return (
-            <Message message={message} />
+            <Message
+              message={message}
+              key={message.id}
+              isEditing={message.id === editingMessageId}
+              editingContent={editingContent}
+              setEditingContent={setEditingContent}
+              setIsEditing={(isEditing: boolean) => {
+                if (isEditing)
+                  setEditingMessageId(message.id);
+                else
+                  setEditingMessageId(null);
+              }}
+            />
           );
         })
       )}
