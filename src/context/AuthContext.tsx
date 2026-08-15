@@ -56,14 +56,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUsername('');
       return;
     }
-    setLoading(true);
 
     const { data, error } = await supabase.from('profiles').select('username').eq('id', user.id).single();
     if (data && !error) {
       setUsername(data.username);
     }
     if (error) {
-      setLoading(false);
       console.log("ERROR ERROR ERRROORRR!!");
       console.log(error);
     }
@@ -83,7 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("ERROOOOOOR");
       console.log(senderRes.error);
       console.log(receiverRes.error);
-      setLoading(false);
       return;
     }
     senderRes.data = senderRes.data ?? [];
@@ -98,7 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setFriends(flatUniqueArray);
     console.log("FLAT UNIQUE ARRAY");
     console.log(flatUniqueArray);
-    setLoading(false);
   };
 
   useEffect(() => {

@@ -32,6 +32,7 @@ export interface Message {
   content: string;
   sent_at: string;
   edited_at: string | null;
+  reply_to: string | null;
 }
 
 interface ChatContextType {
@@ -39,6 +40,8 @@ interface ChatContextType {
   setSelectedUserId: React.Dispatch<React.SetStateAction<string | null>>,
   isSidebarOpen: boolean,
   setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  replyId: string | null,
+  setReplyId: React.Dispatch<React.SetStateAction<string | null>>,
   messages: Message[],
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
   friendList: Card[],
@@ -61,6 +64,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [user, friends, username]);
 
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [replyId, setReplyId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   const { messages, setMessages } = useFetchMessages(selectedUserId);
@@ -68,7 +72,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   useHandleMessageChange(friendsRef, userRef, setMessages);
 
   return (
-    <ChatContext.Provider value={{ friendList, messages, selectedUserId, setSelectedUserId, usernameRef, userRef, friendsRef, setIsSidebarOpen, setMessages, isSidebarOpen }}>
+    <ChatContext.Provider value={{ friendList, messages, selectedUserId, setSelectedUserId, replyId, setReplyId, usernameRef, userRef, friendsRef, setIsSidebarOpen, setMessages, isSidebarOpen }}>
       {children}
     </ChatContext.Provider>
   )

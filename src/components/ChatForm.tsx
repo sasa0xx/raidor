@@ -1,4 +1,5 @@
 import { IoSend } from "react-icons/io5";
+import { FiX } from "react-icons/fi";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { useChat } from "../context/ChatContext";
@@ -7,11 +8,20 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 
 export function ChatForm() {
-  const { selectedUserId, setMessages, friendList } = useChat();
+  const {
+    selectedUserId,
+    setMessages,
+    friendList,
+    replyId,
+    setReplyId,
+    messages,
+  } = useChat();
+
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState("");
 
   const activeFriend = friendList.find((f) => f.id === selectedUserId);
+  const replyMessage = messages.find((message) => message.id === replyId);
 
   const handleSendMessage = (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -24,6 +34,7 @@ export function ChatForm() {
           sender_id: user?.id,
           receiver_id: selectedUserId,
           content: newMessage.trim(),
+          reply_to: replyId,
         })
         .select()
         .single();
@@ -31,6 +42,7 @@ export function ChatForm() {
       if (error || !data) return;
 
       setMessages((p) => [...p, data]);
+      setReplyId(null);
     };
 
     insertMessage();
@@ -42,25 +54,51 @@ export function ChatForm() {
       {selectedUserId && (
         <form
           onSubmit={handleSendMessage}
-          className="p-3 bg-white border-t border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 flex items-center gap-x-2"
+          className="p-3 bg-white border-t border-slate-200 dark:bg-gray-900 dark:border-gray-800/80"
         >
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={`Message ${activeFriend?.username || "..."}`}
-            className="flex-1 bg-slate-100 border-slate-200 dark:bg-gray-950/80 dark:border-gray-800 focus:border-violet-500 text-sm py-2 px-4"
-          />
-          <Button
-            type="submit"
-            disabled={!newMessage.trim()}
-            className="flex items-center gap-x-2 px-4 py-2 text-sm font-medium flex-shrink-0"
-          >
-            <span>Send</span>
-            <IoSend size={14} />
-          </Button>
+          {replyMessage && (
+            <div className="mb-2 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-violet-600 dark:text-violet-400">
+                  Replying to message
+                </p>
+
+                <p className="truncate text-xs text-slate-500 dark:text-gray-400">
+                  {replyMessage.content}
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                varient="ghost"
+                className="small-btn ml-2 shrink-0"
+                onClick={() => setReplyId(null)}
+                aria-label="Cancel reply"
+              >
+                <FiX size={16} />
+              </Button>
+            </div>
+          )}
+
+          <div className="flex items-center gap-x-2">
+            <Input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder={`Message ${activeFriend?.username || "..."}`}
+              className="flex-1 bg-slate-100 border-slate-200 dark:bg-gray-950/80 dark:border-gray-800 focus:border-violet-500 text-sm py-2 px-4"
+            />
+
+            <Button
+              type="submit"
+              disabled={!newMessage.trim()}
+              className="flex items-center gap-x-2 px-4 py-2 text-sm font-medium shrink-0"
+            >
+              <span>Send</span>
+              <IoSend size={14} />
+            </Button>
+          </div>
         </form>
-      )
-      }
+      )}
     </>
   );
 }

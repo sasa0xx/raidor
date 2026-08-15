@@ -9,18 +9,19 @@ export function useMessageActions(
   setIsEditing: (isEditing: boolean) => void,
   setEditingContent: (edtingContent: string) => void
 ) {
-  const { setMessages } = useChat();
+  const { setMessages, replyId, setReplyId } = useChat();
   const { user } = useAuth();
 
   const isMe = message.sender_id === user?.id;
+  const isReplyTarget = replyId === message.id;
 
-  const deleteMessage = async (messageId: string) => {
+  const deleteMessage = async () => {
     if (!user) return;
 
     const { error } = await supabase
       .from("messages")
       .delete()
-      .eq("id", messageId)
+      .eq("id", message.id)
       .eq("sender_id", user.id);
 
     if (error) {
@@ -29,7 +30,7 @@ export function useMessageActions(
     }
 
     setMessages((prev) =>
-      prev.filter((message) => message.id !== messageId)
+      prev.filter((m) => m.id !== message.id)
     );
   };
 
@@ -64,5 +65,9 @@ export function useMessageActions(
     setEditingContent("");
   };
 
-  return { isMe, editMessage, deleteMessage };
+  const setReplyTarget = () => {
+    setReplyId(message.id);
+  }
+
+  return { isMe, editMessage, deleteMessage, isReplyTarget, setReplyTarget };
 }
