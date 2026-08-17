@@ -18,7 +18,7 @@ export function MessagesList({
   return (
     <div
       ref={messagesContainerRef}
-      className="flex-1 overflow-y-auto flex flex-col gap-y-3"
+      className="flex-1 overflow-y-auto flex flex-col gap-y-3 min-h-0"
     >
       {!selectedUserId ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-gray-500">
@@ -56,7 +56,7 @@ export function MessagesList({
               key={message.id}
               isEditing={message.id === editingMessageId}
               editingContent={editingContent}
-              setEditingContent={setEditingContent}
+              setEditingContent={(editingContent: string) => setEditingContent(editingContent)}
               setIsEditing={(isEditing: boolean) => {
                 if (isEditing)
                   setEditingMessageId(message.id);

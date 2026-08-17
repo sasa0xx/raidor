@@ -57,7 +57,7 @@ export function ChatForm() {
           className="p-3 bg-white border-t border-slate-200 dark:bg-gray-900 dark:border-gray-800/80"
         >
           {replyMessage && (
-            <div className="mb-2 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
+            <div className="mb-2 shrink-0 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-violet-600 dark:text-violet-400">
                   Replying to message
@@ -83,11 +83,13 @@ export function ChatForm() {
           <div className="flex items-center gap-x-2">
             <Input
               value={newMessage}
+              type="search"
+              inputMode="text"
+              spellCheck={false}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder={`Message ${activeFriend?.username || "..."}`}
               className="flex-1 bg-slate-100 border-slate-200 dark:bg-gray-950/80 dark:border-gray-800 focus:border-violet-500 text-sm py-2 px-4"
             />
-
             <Button
               type="submit"
               disabled={!newMessage.trim()}

@@ -12,7 +12,7 @@ export function ChatHeader() {
     activeFriend && onlineUsers.includes(activeFriend.id);
 
   return (
-    <header className="px-4 py-3.5 bg-white border-b border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 flex items-center gap-x-3 shadow-xs">
+    <header className="shrink-0 px-4 py-3.5 bg-white border-b border-slate-200 dark:bg-gray-900 dark:border-gray-800/80 flex items-center gap-x-3 shadow-xs">
       <Button
         varient="ghost"
         className="md:hidden p-2 border-0 hover:bg-slate-100 text-slate-600 dark:hover:bg-gray-800 dark:text-gray-300"
