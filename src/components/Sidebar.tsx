@@ -22,13 +22,17 @@ export function Sidebar() {
         <div className="flex items-center justify-between p-3.5 border-b border-slate-200 dark:border-gray-800">
           <Button
             varient="ghost"
-            className="flex gap-x-2.5 items-center small-btn p-0!"
+            className="flex gap-x-2.5 items-center small-btn p-2!"
             commandFor="profileDialog"
             command="show-modal"
             title="Edit Profile"
           >
-            <div className="h-9 w-9 rounded-xl bg-violet-600 flex items-center justify-center font-bold text-white shadow-sm shrink-0">
-              {username ? username[0]?.toUpperCase() : "?"}
+            <div className="h-9 w-9 rounded-2xl bg-violet-600 flex items-center justify-center font-bold text-white shadow-sm shrink-0 overflow-hidden">
+              {profile?.avatar_path ? (
+                <img src={profile.avatar_path} alt="avatar" className="h-full w-full object-cover" />
+              ) : (
+                username ? username[0]?.toUpperCase() : "?"
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm text-slate-900 dark:text-gray-100 truncate">
@@ -111,10 +115,12 @@ export function Sidebar() {
                       setIsSidebarOpen(false);
                     }}
                   >
-                    <div className="relative shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-linear-to-tr from-violet-600 to-indigo-500 flex items-center justify-center text-gray-100 font-bold text-sm shadow-sm">
-                        {chat.display_name.charAt(0).toUpperCase()}
-                      </div>
+                    <div className="h-10 w-10 rounded-full bg-linear-to-tr from-violet-600 to-indigo-500 flex items-center justify-center text-gray-100 font-bold text-sm shadow-sm overflow-hidden">
+                      {chat.avatar_path ? (
+                        <img src={chat.avatar_path} alt="avatar" className="h-full w-full object-cover" />
+                      ) : (
+                        chat.display_name.charAt(0).toUpperCase()
+                      )}
                     </div>
 
                     <div className="flex-1 min-w-0">
