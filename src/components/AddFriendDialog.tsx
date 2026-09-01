@@ -6,36 +6,60 @@ import { useAuth } from "../context/AuthContext";
 
 export function AddFriendDialog() {
   const [windowError, setWindowError] = useState("");
+  const [windowSuccess, setWindowSuccess] = useState("");
   const [windowUsername, setWindowUsername] = useState("");
-  const { user, username, refreshFriends } = useAuth();
+  const { user, profile, refreshFriends } = useAuth();
 
   const dialogRef = useRef<HTMLDialogElement>(null);
-
   const handleAddFriend = (e: React.SubmitEvent) => {
     e.preventDefault();
+    setWindowError("");
+    setWindowSuccess("");
 
-    const addFriend = async () => {
-      const { data, error } = await supabase
+    const sendRequest = async () => {
+      const { data: targetUser, error: findError } = await supabase
         .from("profiles")
-        .select("id")
+        .select("id, username")
         .eq("username", windowUsername)
         .single();
 
-      if (error || !data) {
+      if (findError || !targetUser) {
         setWindowError("Cannot find a user with that username.");
         return;
       }
-      await supabase.from("messages").insert({
-        sender_id: user?.id,
-        receiver_id: data.id,
-        content: `${username} Started the conversation`,
-      });
 
-      refreshFriends();
-      dialogRef.current?.close();
+      if (targetUser.id === user?.id) {
+        setWindowError("You cannot add yourself as a friend.");
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from("friend_requests")
+        .insert({
+          sender_id: user?.id,
+          receiver_id: targetUser.id,
+          status: "pending",
+        });
+
+      if (insertError) {
+        if (insertError.code === "23505") {
+          setWindowError("A friend request already exists with this user.");
+        } else {
+          setWindowError("Failed to send friend request.");
+          console.error(insertError);
+        }
+        return;
+      }
+
+      setWindowSuccess(`Friend request sent to @${targetUser.username}!`);
+      setWindowUsername("");
+      setTimeout(() => {
+        setWindowSuccess("");
+        dialogRef.current?.close();
+      }, 1500);
     };
 
-    addFriend();
+    sendRequest();
   };
 
   return (

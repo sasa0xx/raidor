@@ -1,15 +1,17 @@
 import { Button } from "./Button.tsx"
 import { Input } from "./Input.tsx"
 import { useState } from "react"
-import { FaUserEdit } from "react-icons/fa";
+import { FaUserPlus, FaBell } from "react-icons/fa";
 import { FiSun, FiMoon, FiX } from "react-icons/fi";
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext.tsx";
 
 export function Sidebar() {
   const { isSidebarOpen, setIsSidebarOpen, friendList, setSelectedUserId, selectedUserId } = useChat();
-  const { theme, setTheme, username } = useAuth();
+  const { theme, setTheme, profile } = useAuth();
   const [filter, setFilter] = useState("");
+
+  const username = profile?.username;
 
   return (
     <>
@@ -18,12 +20,22 @@ export function Sidebar() {
           }`}
       >
         <div className="flex items-center justify-between p-3.5 border-b border-slate-200 dark:border-gray-800">
-          <div className="flex gap-x-2.5 items-center">
-            <div className="h-9 w-9 rounded-xl bg-violet-600 flex items-center justify-center font-bold text-white shadow-sm">
+          <Button
+            varient="ghost"
+            className="flex gap-x-2.5 items-center small-btn p-0!"
+            commandFor="profileDialog"
+            command="show-modal"
+            title="Edit Profile"
+          >
+            <div className="h-9 w-9 rounded-xl bg-violet-600 flex items-center justify-center font-bold text-white shadow-sm shrink-0">
               {username ? username[0]?.toUpperCase() : "?"}
             </div>
-            <p className="font-semibold text-sm text-slate-900 dark:text-gray-100">{username}</p>
-          </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm text-slate-900 dark:text-gray-100 truncate">
+                {profile?.display_name || username}
+              </p>
+            </div>
+          </Button>
 
           <div className="flex items-center gap-x-1">
             <Button
@@ -42,10 +54,20 @@ export function Sidebar() {
             <Button
               varient="ghost"
               className="small-btn"
+              commandFor="friendRequests"
+              command="show-modal"
+              title="Friend Requests"
+            >
+              <FaBell size={18} />
+            </Button>
+
+            <Button
+              varient="ghost"
+              className="small-btn"
               commandFor="addFriend"
               command="show-modal"
             >
-              <FaUserEdit size={18} />
+              <FaUserPlus size={18} />
             </Button>
 
             <Button
@@ -74,7 +96,7 @@ export function Sidebar() {
             </div>
           ) : (
             friendList
-              .filter((f) => f.username.toLowerCase().includes(filter.toLowerCase()))
+              .filter((f) => f.display_name.toLowerCase().includes(filter.toLowerCase()))
               .map((chat) => {
                 const isSelected = chat.id === selectedUserId;
                 return (
@@ -91,14 +113,14 @@ export function Sidebar() {
                   >
                     <div className="relative shrink-0">
                       <div className="h-10 w-10 rounded-full bg-linear-to-tr from-violet-600 to-indigo-500 flex items-center justify-center text-gray-100 font-bold text-sm shadow-sm">
-                        {chat.username.charAt(0).toUpperCase()}
+                        {chat.display_name.charAt(0).toUpperCase()}
                       </div>
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
                         <h3 className="text-sm font-semibold truncate">
-                          {chat.username}
+                          {chat.display_name}
                         </h3>
                       </div>
 

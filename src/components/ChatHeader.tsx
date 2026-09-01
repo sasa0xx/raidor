@@ -24,11 +24,11 @@ export function ChatHeader() {
       {activeFriend ? (
         <div className="flex items-center gap-x-3.5">
           <div className="h-9 w-9 rounded-full bg-linear-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-sm text-white">
-            {activeFriend.username.charAt(0).toUpperCase()}
+            {activeFriend.display_name.charAt(0).toUpperCase()}
           </div>
           <div>
             <h2 className="font-semibold text-sm text-slate-900 dark:text-gray-100">
-              {activeFriend.username}
+              {activeFriend.display_name}
             </h2>
             <span className="text-[11px] text-violet-600 dark:text-violet-400 font-medium">
               {isActiveFriendOnline ? "Online" : "Offline"}

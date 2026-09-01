@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Input } from "./Input";
 import { Button } from "./Button";
 import { MdDeleteForever, MdEdit } from "react-icons/md";
 import { FaReply } from "react-icons/fa";
@@ -7,6 +6,7 @@ import { type Message } from "../context/ChatContext";
 import { useMessageActions } from "../hooks/useMessageActions";
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext";
+import { EditingMessage } from "./EditingMessage";
 
 interface MessageProps {
   message: Message;
@@ -171,39 +171,12 @@ export function Message({
   return (
     <React.Fragment key={message.id}>
       {isEditing ? (
-        <form
-          onSubmit={editMessage}
-          className="flex flex-col items-end w-full px-4 py-1.5"
-        >
-          <Input
-            value={editingContent}
-            onChange={(e) => setEditingContent(e.target.value)}
-            autoFocus
-            className="max-w-[85%] sm:max-w-[75%] md:max-w-md w-full"
-          />
-
-          <div className="flex items-center gap-2 mt-2">
-            <Button
-              type="button"
-              varient="ghost"
-              className="small-btn"
-              onClick={() => {
-                setIsEditing(false);
-                setEditingContent("");
-              }}
-            >
-              Cancel
-            </Button>
-
-            <Button
-              type="submit"
-              className="px-3 py-1.5 text-xs"
-            >
-              Save
-            </Button>
-          </div>
-        </form>
-      ) : (
+        <EditingMessage
+          editMessage={editMessage}
+          setIsEditing={setIsEditing}
+          editingContent={editingContent}
+          setEditingContent={setEditingContent}
+        />) : (
         <div className="relative w-full">
           <div
             className={`absolute top-1/2 -translate-y-1/2 text-violet-500 ${isMe ? "right-2" : "left-2"
@@ -297,12 +270,12 @@ export function Message({
               {repliedMessage && (
                 <div
                   className={`mb-2 px-3 py-2 rounded-lg border-l-2 text-xs ${isMe
-                      ? repliedMessage.sender_id === user?.id
-                        ? "bg-violet-700/60 border-violet-300/70 text-violet-100"
-                        : "bg-gray-100 dark:bg-gray-800 border-violet-500 text-slate-500 dark:text-gray-300"
-                      : repliedMessage.sender_id === user?.id
-                        ? "bg-violet-100 dark:bg-violet-700/80 border-violet-500 text-violet-700 dark:text-violet-300"
-                        : "bg-gray-100 dark:bg-gray-800 border-violet-500 text-slate-500 dark:text-gray-300"
+                    ? repliedMessage.sender_id === user?.id
+                      ? "bg-violet-700/60 border-violet-300/70 text-violet-100"
+                      : "bg-gray-100 dark:bg-gray-800 border-violet-500 text-slate-500 dark:text-gray-300"
+                    : repliedMessage.sender_id === user?.id
+                      ? "bg-violet-100 dark:bg-violet-700/80 border-violet-500 text-violet-700 dark:text-violet-300"
+                      : "bg-gray-100 dark:bg-gray-800 border-violet-500 text-slate-500 dark:text-gray-300"
                     }`}
                 >
                   <p className="font-semibold mb-0.5">

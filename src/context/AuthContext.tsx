@@ -4,12 +4,21 @@ import { supabase } from "../lib/supabase";
 
 type Theme = "light" | "dark";
 
+export interface Profile {
+  id: string;
+  username: string;
+  display_name: string | null;
+  created_at: string;
+  avatar_path: string | null;
+  bio: string | null;
+}
+
 interface AuthContextType {
   user: User | null;
+  profile: Profile | null;
   session: Session | null;
   friends: string[];
   loading: boolean;
-  username: string;
   theme: Theme;
   setTheme: React.Dispatch<React.SetStateAction<Theme>>;
   refreshFriends: () => void;
@@ -19,10 +28,10 @@ const Context = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>("dark");
-  const [username, setUsername] = useState("");
   const [friends, setFriends] = useState<string[]>([]);
 
   useEffect(() => {
@@ -53,48 +62,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshFriends = async () => {
     if (!user) {
-      setUsername('');
+      setProfile(null);
+      setFriends([]);
       return;
     }
 
-    const { data, error } = await supabase.from('profiles').select('username').eq('id', user.id).single();
-    if (data && !error) {
-      setUsername(data.username);
-    }
-    if (error) {
-      console.log("ERROR ERROR ERRROORRR!!");
-      console.log(error);
+    const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    if (profileData && !profileError) {
+      setProfile(profileData);
     }
 
-    const senderQuery = supabase
-      .from('messages')
-      .select('sender_id')
-      .not('sender_id', 'eq', user.id)
+    const { data: requests, error: reqError } = await supabase
+      .from('friend_requests')
+      .select('*')
+      .eq('status', 'accepted')
 
-    const receiverQuery = supabase
-      .from('messages')
-      .select('receiver_id')
-      .not('receiver_id', 'eq', user.id)
-
-    let [senderRes, receiverRes] = await Promise.all([senderQuery, receiverQuery]);
-    if (senderRes.error || receiverRes.error) {
-      console.log("ERROOOOOOR");
-      console.log(senderRes.error);
-      console.log(receiverRes.error);
+    if (reqError) {
+      console.error("Error fetching friends:", reqError);
       return;
     }
-    senderRes.data = senderRes.data ?? [];
-    receiverRes.data = receiverRes.data ?? [];
+    const friendIds = (requests || []).map((req) =>
+      req.sender_id === user.id ? req.receiver_id : req.sender_id
+    );
 
-    const flatUniqueArray = [
-      ...new Set([
-        ...senderRes.data.map(r => r.sender_id),
-        ...receiverRes.data.map(r => r.receiver_id)
-      ])
-    ];
-    setFriends(flatUniqueArray);
-    console.log("FLAT UNIQUE ARRAY");
-    console.log(flatUniqueArray);
+    setFriends([...new Set(friendIds)]);
   };
 
   useEffect(() => {
@@ -102,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user])
 
   return (
-    <Context.Provider value={{ session, user, friends, loading, theme, username, setTheme, refreshFriends }}>
+    <Context.Provider value={{ session, user, friends, loading, theme, profile, setTheme, refreshFriends }}>
       {children}
     </Context.Provider>
   );

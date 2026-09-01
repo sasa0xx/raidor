@@ -15,6 +15,8 @@ export function useFetchFriends(friendsRef: React.RefObject<string[]>, usernameR
         .select(`
           username,
           id,
+          avatar_path,
+          display_name,
           sent:messages!sender_id(content, sent_at, sender:profiles!sender_id(username)),
           received:messages!receiver_id(content, sent_at, sender:profiles!sender_id(username))
         `)
@@ -50,7 +52,8 @@ export function useFetchFriends(friendsRef: React.RefObject<string[]>, usernameR
 
         return {
           id: profile.id,
-          username: profile.username ?? "",
+          avatar_path: profile.avatar_path,
+          display_name: profile.display_name ?? profile.username,
           sender: sn === usernameRef.current ? "You" : sn,
           lastMessage: latestMsg?.content ?? "",
         };

@@ -15,13 +15,17 @@ export type RawMessage = {
 export type RawProfile = {
   id: string;
   username: string;
+  display_name: string | null;
+  avatar_path: string | null;
+  bio: string | null;
   sent: RawMessage[];
   received: RawMessage[];
 };
 
 export interface Card {
   id: string;
-  username: string;
+  display_name: string;
+  avatar_path: string | null;
   sender: string;
   lastMessage: string;
 }
@@ -53,15 +57,15 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | null>(null);
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
-  const { username, friends, user } = useAuth();
+  const { profile, friends, user } = useAuth();
   const userRef = useRef<User | null>(null);
   const friendsRef = useRef<string[]>([]);
   const usernameRef = useRef("");
   useEffect(() => {
     userRef.current = user;
     friendsRef.current = friends;
-    usernameRef.current = username;
-  }, [user, friends, username]);
+    usernameRef.current = profile?.username ?? "";
+  }, [user, friends, profile?.username]);
 
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [replyId, setReplyId] = useState<string | null>(null);

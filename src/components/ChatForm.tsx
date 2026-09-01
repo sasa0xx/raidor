@@ -87,7 +87,7 @@ export function ChatForm() {
               inputMode="text"
               spellCheck={false}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={`Message ${activeFriend?.username || "..."}`}
+              placeholder={`Message ${activeFriend?.display_name || "..."}`}
               className="flex-1 bg-slate-100 border-slate-200 dark:bg-gray-950/80 dark:border-gray-800 focus:border-violet-500 text-sm py-2 px-4"
             />
             <Button
