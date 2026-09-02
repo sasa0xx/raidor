@@ -24,6 +24,7 @@ export type RawProfile = {
 
 export interface Card {
   id: string;
+  bio: string | null;
   display_name: string;
   avatar_path: string | null;
   sender: string;

@@ -8,7 +8,6 @@ export function useFetchFriends(friendsRef: React.RefObject<string[]>, usernameR
   const { friends } = useAuth();
 
   useEffect(() => {
-    console.log("FETCHING FRIENDS WITH:", friendsRef.current);
     const fetchStuff = async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -17,6 +16,7 @@ export function useFetchFriends(friendsRef: React.RefObject<string[]>, usernameR
           id,
           avatar_path,
           display_name,
+          bio,
           sent:messages!sender_id(content, sent_at, sender:profiles!sender_id(username)),
           received:messages!receiver_id(content, sent_at, sender:profiles!sender_id(username))
         `)
@@ -50,9 +50,21 @@ export function useFetchFriends(friendsRef: React.RefObject<string[]>, usernameR
 
         const sn = senderData?.username ?? "";
 
+        // Convert the raw path into a usable image URL
+        let avatarUrl = undefined;
+        if (profile.avatar_path) {
+          const { data: publicUrlData } = supabase.storage
+            .from("avatars")
+            .getPublicUrl(profile.avatar_path);
+          avatarUrl = publicUrlData.publicUrl;
+        }
+
         return {
           id: profile.id,
           avatar_path: profile.avatar_path,
+          avatar_url: avatarUrl, // Add this so your UI components can render the image directly
+          username: profile.username, // Needed for profile dialog
+          bio: profile.bio,           // Needed for profile dialog
           display_name: profile.display_name ?? profile.username,
           sender: sn === usernameRef.current ? "You" : sn,
           lastMessage: latestMsg?.content ?? "",
@@ -62,7 +74,11 @@ export function useFetchFriends(friendsRef: React.RefObject<string[]>, usernameR
       setFriendList(cards);
     };
 
-    fetchStuff();
+    if (friendsRef.current.length > 0) {
+      fetchStuff();
+    } else {
+      setFriendList([]); // Clear list if no friends
+    }
   }, [friends]);
 
   return friendList;

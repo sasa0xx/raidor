@@ -31,8 +31,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [theme, setTheme] = useState<Theme>("dark");
   const [friends, setFriends] = useState<string[]>([]);
+
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("theme") as Theme) || "dark";
+    }
+    return "dark";
+  });
 
   useEffect(() => {
     const root = document.documentElement;

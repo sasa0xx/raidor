@@ -22,9 +22,13 @@ export function ChatHeader() {
       </Button>
 
       {activeFriend ? (
-        <div className="flex items-center gap-x-3.5">
+        <Button varient="ghost" className="small-btn flex items-center gap-x-3.5" commandFor="friendProfile" command="show-modal">
           <div className="h-9 w-9 rounded-full bg-linear-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-sm text-white">
-            {activeFriend.display_name.charAt(0).toUpperCase()}
+            {activeFriend.avatar_path ? (
+              <img src={activeFriend.avatar_path} alt="avatar" className="h-full w-full object-cover" />
+            ) : (
+              activeFriend.display_name.charAt(0).toUpperCase()
+            )}
           </div>
           <div>
             <h2 className="font-semibold text-sm text-slate-900 dark:text-gray-100">
@@ -34,7 +38,7 @@ export function ChatHeader() {
               {isActiveFriendOnline ? "Online" : "Offline"}
             </span>
           </div>
-        </div>
+        </Button>
       ) : (
         <span className="text-sm font-semibold text-slate-700 dark:text-gray-300 md:hidden">
           Conversations

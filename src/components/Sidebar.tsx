@@ -5,6 +5,7 @@ import { FaUserPlus, FaBell } from "react-icons/fa";
 import { FiSun, FiMoon, FiX } from "react-icons/fi";
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext.tsx";
+import { supabase } from "../lib/supabase.ts";
 
 export function Sidebar() {
   const { isSidebarOpen, setIsSidebarOpen, friendList, setSelectedUserId, selectedUserId } = useChat();
@@ -150,6 +151,16 @@ export function Sidebar() {
               })
           )}
         </div>
+        <Button
+          varient="ghost"
+          className="w-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 border-none!"
+          onClick={async () => {
+            const { error } = await supabase.auth.signOut();
+            if (error) console.error("Error signing out:", error);
+          }}
+        >
+          Sign Out
+        </Button>
       </aside>
     </>
   )
