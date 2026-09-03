@@ -34,7 +34,28 @@ export function FriendRequestsDialog() {
   };
 
   useEffect(() => {
+    if (!user) return;
+
     fetchRequests();
+
+    const channel = supabase
+      .channel("friend-requests-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "friend_requests",
+        },
+        () => {
+          fetchRequests();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
