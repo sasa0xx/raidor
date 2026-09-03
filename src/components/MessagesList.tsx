@@ -10,15 +10,13 @@ export function MessagesList({
 }) {
   const { selectedUserId, messages } = useChat();
 
-  const [editingMessageId, setEditingMessageId] = useState<string | null>(
-    null
-  );
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
 
   return (
     <div
       ref={messagesContainerRef}
-      className="flex-1 overflow-y-auto flex flex-col gap-y-3 min-h-0"
+      className="flex-1 overflow-y-auto flex flex-col gap-y-1 min-h-0 p-4 pt-6"
     >
       {!selectedUserId ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-gray-500">
@@ -49,19 +47,34 @@ export function MessagesList({
           </p>
         </div>
       ) : (
-        messages.map((message) => {
+        messages.map((message, index) => {
+          const prevMessage = index > 0 ? messages[index - 1] : null;
+          const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
+
+          const isSameSenderAsPrev = prevMessage?.sender_id === message.sender_id;
+          const timeDiffPrev = prevMessage
+            ? Math.abs(new Date(message.sent_at).getTime() - new Date(prevMessage.sent_at).getTime())
+            : 0;
+          const isGrouped = Boolean(isSameSenderAsPrev && timeDiffPrev < 300000);
+
+          const isSameSenderAsNext = nextMessage?.sender_id === message.sender_id;
+          const timeDiffNext = nextMessage
+            ? Math.abs(new Date(nextMessage.sent_at).getTime() - new Date(message.sent_at).getTime())
+            : 0;
+          const isLastInGroup = !nextMessage || !(isSameSenderAsNext && timeDiffNext < 300000);
+
           return (
             <Message
               message={message}
               key={message.id}
+              isGrouped={isGrouped}
+              isLastInGroup={isLastInGroup}
               isEditing={message.id === editingMessageId}
               editingContent={editingContent}
-              setEditingContent={(editingContent: string) => setEditingContent(editingContent)}
+              setEditingContent={setEditingContent}
               setIsEditing={(isEditing: boolean) => {
-                if (isEditing)
-                  setEditingMessageId(message.id);
-                else
-                  setEditingMessageId(null);
+                if (isEditing) setEditingMessageId(message.id);
+                else setEditingMessageId(null);
               }}
             />
           );
